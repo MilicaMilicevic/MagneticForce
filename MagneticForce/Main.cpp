@@ -37,7 +37,7 @@ int matrixAngle[6][2]={ //definise lukove koje treba zanemariti pri crtanju elip
 	{-135,180},
 	{-90,135}};
 
-int matrixDistance[4][2]={ //vrijednosti elipsi!Birane tako da su silnice pri provodniku gusce, a s povecenjem rastojanja-rjedje!
+int matrixDistance[4][2]={ //vrijednosti elipsi!Birane tako da su silnice pri provodniku gusce (zavisno od rastojanja).
 	{1.25,1.0},
 	{2.5,2.0},
 	{4.375,3.5},  
@@ -51,7 +51,7 @@ GLfloat xView=0.0, yView=5.0, zView=15.0;    //inicijalne vrijednosti za transf.
 
 GLUquadricObj *qobj=gluNewQuadric();		//pomocna za kreiranje cilindara/provodnika!
 
-const GLfloat light[4][4]={                 //karakteristike materijala
+const GLfloat light[4][4]={                 //karakteristike izvora
 	{10.0,10.0,10.0,1.0},	
 	{1.0,1.0,1.0,1.0},		
 	{1.0,1.0,1.0,1.0},		
@@ -65,16 +65,15 @@ const GLfloat shininess=10.0;
 
 //----------------------CRTANJE ELIPSE (OBICNA)------------------------------------------------------------
 void drawEllipse(float radiusX, float radiusY,int from, int to){
-   glBegin(GL_LINE_STRIP);  //elipsa se crta kao niz linija
-   for(int i=from;i<to;i++)
-   {
-      float rad = i*DEG2RAD;
-      glVertex2f(cos(rad)*radiusX,sin(rad)*radiusY);
-   }
+   glBegin(GL_LINE_STRIP); 
+		for(int i=from;i<to;i++){
+			float rad = i*DEG2RAD;
+			glVertex2f(cos(rad)*radiusX,sin(rad)*radiusY);
+			}
    glEnd();
 }
 
-void spinEllipse(GLfloat increment,int id){			//speedLimiter - da se ne vrti previse! Da se mogu uociti prazni lukovi!
+void spinEllipse(GLfloat increment,int id){			//speedLimiter - da se ne vrti prebrzo, da se mogu uociti prazni lukovi!
 	glPushMatrix();
 	glTranslatef(increment,0,0);
 	if(matrixProperties[id][0]<speedMax)
@@ -132,7 +131,7 @@ void print(int x, int y, const char *string, int mode){       //x, y koordinate 
 					if(textSpeed1<0.05)
 						textSpeed1=textSpeed1+textSpeedIncDec;
 					}
-					}
+				}
 				else if(mode==2){
 				glTranslatef(textSpeed2,0,0);
 				if(!sameDirection){
@@ -147,7 +146,7 @@ void print(int x, int y, const char *string, int mode){       //x, y koordinate 
 			glDepthFunc(GL_ALWAYS);
 			glRasterPos2f(x, y);
 			for(int i=0;i<strlen(string);++i)
-			glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,string[i]);
+				glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18,string[i]);
 			glDepthFunc(GL_LESS);
 		glPopMatrix();
 		glMatrixMode(GL_MODELVIEW);
@@ -312,25 +311,7 @@ void display(void){
 	print(screenWidth/2,screenHeight*0.84,"F2",1);
 //-----------------------------CRTANJE VEKTORA MAGNETNE INDUKCIJE------------------------------------------------------------
 	glColor3f(0,0,1);
-	if(sameDirection){  
-	glPushMatrix();   //crtanje F2!
-		glTranslatef(translateSpeed1,0,0);
-		glBegin(GL_LINES);
-			glVertex3f(0,-5,cylindarRadius);
-			glVertex3f(0,-5,cylindarRadius+lengthArrow);
-		glEnd();
-	glPopMatrix();
-	glPushMatrix(); 
-	glTranslatef(translateSpeed1,0,0);
-		glBegin(GL_TRIANGLES);
-			glVertex3f(0,-5,cylindarRadius+lengthArrow+triangleSize);
-			glVertex3f(0,-4.5,cylindarRadius+lengthArrow);
-			glVertex3f(0,-5.5,cylindarRadius+lengthArrow);
-		glEnd();
-	glPopMatrix();
-	}
-else {	
-		glPushMatrix();
+	glPushMatrix();
 		glTranslatef(translateSpeed1,0,0);
 		glBegin(GL_LINES);
 			glVertex3f(0,-5,-cylindarRadius);
@@ -345,7 +326,25 @@ else {
 			glVertex3f(0,-5.5,-(cylindarRadius+lengthArrow));
 		glEnd();
 	glPopMatrix();
+
+	if(sameDirection){ 
+		glPushMatrix();
+		glTranslatef(translateSpeed2,0,0);
+		glBegin(GL_LINES);
+			glVertex3f(5,-5,+cylindarRadius);
+			glVertex3f(5,-5,cylindarRadius+lengthArrow);
+		glEnd();
+	glPopMatrix();
+	glPushMatrix(); 
+	glTranslatef(translateSpeed2,0,0);
+		glBegin(GL_TRIANGLES);
+			glVertex3f(5,-5,cylindarRadius+lengthArrow+triangleSize);
+			glVertex3f(5,-4.5,cylindarRadius+lengthArrow);
+			glVertex3f(5,-5.5,cylindarRadius+lengthArrow);
+		glEnd();
+	glPopMatrix();
 	}
+else {	
 	glPushMatrix();
 		glTranslatef(translateSpeed2,0,0);
 		glBegin(GL_LINES);
@@ -361,9 +360,10 @@ else {
 			glVertex3f(5,-5.5,-(cylindarRadius+lengthArrow));
 		glEnd();
 	glPopMatrix();
-	
+	}
+
 	glEnable(GL_LIGHTING);
-	glRotatef(90,1,0,0);			//po defaultu cilindri su orijentisani duz z ose!
+	glRotatef(90,1,0,0);			//po defaultu cilindri orijentisani duz z ose!
 
 	glPushMatrix();      //--------------------------------------------CRTANJE 1.CILINDRA------------------
 		glTranslatef(translateSpeed1,0,0);
@@ -391,8 +391,8 @@ else {
 	glTranslatef(translateSpeed2,0,0);
     gluCylinder(qobj,0.5,0.5, 10, 16, 20);   //drugi cilindar pomijeren u odnosu na prethodni!
 	if(sameDirection){
-		if(translateSpeed2>-0.01*ratio)
-			translateSpeed2=(translateSpeed2-0.001)*ratio;	
+		if(translateSpeed2>-0.01)
+			translateSpeed2=(translateSpeed2-0.001)*ratio;	//TREBA PROMIJENITI USLOV ZA RATIO!
 	}
 	else{
 		if(translateSpeed2<5.0*ratio)
@@ -413,20 +413,20 @@ else {
 
 void specialInput(int key,int x,int y){
 	switch(key){
-	case GLUT_KEY_UP:
+		case GLUT_KEY_UP:
 			yView=yView+2.0;
 			break;
-	case GLUT_KEY_DOWN:
+		case GLUT_KEY_DOWN:
 			yView=yView-2.0;
 			break;
-	case GLUT_KEY_LEFT:
+		case GLUT_KEY_LEFT:
 			xView=xView-2.0;
 			break;
-	case GLUT_KEY_RIGHT:
+		case GLUT_KEY_RIGHT:
 			xView=xView+2.0;
 			break;
-	case GLUT_KEY_F1:
-			i1=i1+0.1;
+		case GLUT_KEY_F1:
+			i1=i1+0.01;
 	}
 	ratio=i1/i2; 
 	glFlush();
@@ -434,7 +434,7 @@ void specialInput(int key,int x,int y){
 
 void reshape(int w, int h){
 	glViewport(0,0,w,h);
-	screenHeight=h;
+	screenHeight=h;  //radi teksta!
 	screenWidth=w;
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
